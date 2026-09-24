@@ -12,6 +12,11 @@ import { Argument, Command, Flag } from 'effect/unstable/cli'
 import { patdownCliVersion } from '#src/patdown-cli-version'
 import { formatPatdownDoctorReport, runPatdownDoctor } from '#src/patdown-doctor'
 import { PatdownJudge, PatdownJudgeFailed, askPatdownJudge } from '#src/patdown-judge'
+import {
+	PatdownJudgmentBudgetExceeded,
+	PatdownJudgmentBudgetInvalid,
+	resolvePatdownJudgmentBudget,
+} from '#src/patdown-judgment-budget'
 import { runPatdownLint } from '#src/patdown-lint'
 import { resolvePatdownLintFileSelection } from '#src/patdown-lint-files'
 import { PatdownOutput } from '#src/patdown-output'
@@ -44,6 +49,12 @@ const adapterFlag = Flag.optional(Flag.String('adapter')).pipe(
 
 const yesThresholdFlag = Flag.optional(Flag.Finite('yes-threshold')).pipe(
 	Flag.withDescription('Minimum exclusive P(yes) for yes; default 0.85, overridable per rule'),
+)
+
+const maxJudgmentsFlag = Flag.optional(Flag.Int('max-judgments')).pipe(
+	Flag.withDescription(
+		'Refuse to start if more than this many file judgments are planned; default is no cap',
+	),
 )
 
 const filesFlag = Flag.String('files').pipe(
@@ -224,12 +235,14 @@ function runPatdownRootLint(
 		readonly yesThreshold: Option.Option<number>
 		readonly files: ReadonlyArray<string>
 		readonly filesFrom: Option.Option<string>
+		readonly maxJudgments: Option.Option<number>
 	},
 ): Effect.Effect<void, never, PatdownLintServices> {
 	return Effect.gen(function* () {
 		const patdownRuleSource = yield* PatdownRuleSource
 		const path = yield* Path.Path
 		const cutoff = yield* resolvePatdownYesThreshold(options.yesThreshold)
+		const judgmentBudget = yield* resolvePatdownJudgmentBudget(options.maxJudgments)
 		const cwd = path.resolve('.')
 		const selection = yield* resolvePatdownLintFileSelection(cwd, options.files, options.filesFrom)
 
@@ -237,7 +250,10 @@ function runPatdownRootLint(
 			? loadConfiguredPatdownRules(options.adapter, options.rules)
 			: patdownRuleSource.loadPatdownRules(options.rules)
 
-		const linted = yield* runPatdownLint(document, options.verbose, cutoff, selection)
+		const linted = yield* runPatdownLint(document, options.verbose, cutoff, {
+			selection,
+			judgmentBudget,
+		})
 
 		yield* finishPatdownLint(linted.failed, options.verbose, linted.elapsedMs)
 	}).pipe(
@@ -245,6 +261,10 @@ function runPatdownRootLint(
 			PatdownRulesLoadFailed: (error: PatdownRulesLoadFailed) => failPatdown(error.message),
 			PatdownJudgeFailed: (error: PatdownJudgeFailed) => failPatdown(error.message),
 			PatdownYesThresholdInvalid: (error: PatdownYesThresholdInvalid) => failPatdown(error.message),
+			PatdownJudgmentBudgetInvalid: (error: PatdownJudgmentBudgetInvalid) =>
+				failPatdown(error.message),
+			PatdownJudgmentBudgetExceeded: (error: PatdownJudgmentBudgetExceeded) =>
+				failPatdown(error.message),
 			PatdownGitHubAnnotationInvalid: (error: PatdownGitHubAnnotationInvalid) =>
 				failPatdown(error.message),
 			PatdownRulesFileMissing: (error: PatdownRulesFileMissing) => failPatdown(error.message),
@@ -268,6 +288,7 @@ export function makePatdownCommand(
 			files: filesFlag,
 			filesFrom: filesFromFlag,
 			githubAnnotation: githubAnnotationFlag,
+			maxJudgments: maxJudgmentsFlag,
 			noGitHub: noGitHubFlag,
 			rules: rulesFileFlag,
 			verbose: verboseFlag,
@@ -280,6 +301,7 @@ export function makePatdownCommand(
 			yesThreshold,
 			files,
 			filesFrom,
+			maxJudgments,
 			githubAnnotation: _githubAnnotation,
 			noGitHub: _noGitHub,
 		}) =>
@@ -290,6 +312,7 @@ export function makePatdownCommand(
 				yesThreshold,
 				files,
 				filesFrom,
+				maxJudgments,
 			}),
 	).pipe(
 		Command.withDescription('Lint a tree against fuzzy markdown rules'),

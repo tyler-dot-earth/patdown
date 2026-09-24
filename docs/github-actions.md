@@ -28,6 +28,7 @@ Inputs:
 | `files-from` | auto under `RUNNER_TEMP` | skip auto diff and pass your own list |
 | `github-annotation` | unset | `--github-annotation` (`error` / `warning` / `notice`) |
 | `yes-threshold` | unset | `--yes-threshold` |
+| `max-judgments` | unset | `--max-judgments` — planned file/rule evaluations; evidence calls are additional |
 | `verbose` | `true` | `--verbose` |
 | `no-github` | `false` | `--no-github` |
 | `node-version` | `22.22.2` | Node for `setup-node` |

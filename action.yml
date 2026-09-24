@@ -34,6 +34,12 @@ inputs:
     description: Optional exclusive P(yes) cutoff for yes judgments
     required: false
     default: ''
+  max-judgments:
+    description: >
+      Optional --max-judgments N. Limits the planned file/rule evaluations; a run whose plan
+      is larger stops before the first judge call. Evidence requests are additional.
+    required: false
+    default: ''
   verbose:
     description: Pass --verbose to patdown
     required: false
@@ -78,6 +84,7 @@ runs:
         PATDOWN_FILES_FROM_GENERATED: ${{ steps.changed.outputs.files-from }}
         PATDOWN_GITHUB_ANNOTATION: ${{ inputs.github-annotation }}
         PATDOWN_YES_THRESHOLD: ${{ inputs.yes-threshold }}
+        PATDOWN_MAX_JUDGMENTS: ${{ inputs.max-judgments }}
         PATDOWN_VERBOSE: ${{ inputs.verbose }}
         PATDOWN_NO_GITHUB: ${{ inputs.no-github }}
       run: bash "${{ github.action_path }}/action/run-patdown.sh"

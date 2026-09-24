@@ -41,6 +41,13 @@ export { runPatdownCli } from '#src/run-patdown-cli'
 export { resolvePatdownYesThreshold } from '#src/patdown-yes-threshold-config'
 
 export {
+	PatdownJudgmentBudgetExceeded,
+	PatdownJudgmentBudgetInvalid,
+	resolvePatdownJudgmentBudget,
+	type PatdownJudgmentBudget,
+} from '#src/patdown-judgment-budget'
+
+export {
 	PatdownJudge,
 	PatdownJudgeFailed,
 	PatdownJudgmentSchema,

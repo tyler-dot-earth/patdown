@@ -41,5 +41,9 @@ if [ -n "${PATDOWN_YES_THRESHOLD:-}" ]; then
 	args+=(--yes-threshold "$PATDOWN_YES_THRESHOLD")
 fi
 
+if [ -n "${PATDOWN_MAX_JUDGMENTS:-}" ]; then
+	args+=(--max-judgments "$PATDOWN_MAX_JUDGMENTS")
+fi
+
 echo "patdown: running patdown@${version}"
 npx --yes "patdown@${version}" "${args[@]}"
