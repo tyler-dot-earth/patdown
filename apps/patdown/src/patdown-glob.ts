@@ -24,6 +24,17 @@ export const patdownGlobExcludes = [
 	'**/credentials.json',
 	'**/secrets.yaml',
 	'**/secrets.yml',
+	'**/*.tfvars',
+	'**/*.tfvars.json',
+	'**/.npmrc',
+	'**/.pypirc',
+	'**/.pgpass',
+	'**/.my.cnf',
+	'**/*.p12',
+	'**/*.pfx',
+	'**/.git-credentials',
+	'**/*.keystore',
+	'**/*.jks',
 ] as const
 
 /** Empty rule globs mean the whole tree. */

@@ -38,6 +38,48 @@ test('patdownRelativeToolPath keeps cwd-relative paths and drops excludes', () =
 	}
 })
 
+for (const filename of [
+	'prod.tfvars',
+	'prod.tfvars.json',
+	'.npmrc',
+	'.pypirc',
+	'.pgpass',
+	'.my.cnf',
+	'client.p12',
+	'client.pfx',
+	'.git-credentials',
+	'release.keystore',
+	'release.jks',
+]) {
+	test(`credential file ${filename} is skipped for Write and Edit at any depth`, () => {
+		const root = makeRepo()
+
+		try {
+			for (const relativePath of [filename, `src/${filename}`]) {
+				const filePath = join(root, relativePath)
+				const canary = `CANARY-CREDENTIAL:${relativePath}\n`
+				writeFileSync(filePath, canary)
+
+				assert.equal(patdownRelativeToolPath(root, filePath), null)
+
+				for (const toolName of ['Write', 'Edit']) {
+					assert.equal(
+						proposedClaudeToolFile(
+							root,
+							toolName,
+							{ file_path: filePath, content: canary, old_string: canary, new_string: 'new' },
+							() => assert.fail('credential files must not be read'),
+						),
+						null,
+					)
+				}
+			}
+		} finally {
+			rmSync(root, { recursive: true, force: true })
+		}
+	})
+}
+
 test('applyClaudeEdit replaces one unique occurrence or all when asked', () => {
 	assert.equal(applyClaudeEdit('one two one', 'one', '1', false), null)
 	assert.equal(applyClaudeEdit('one two', 'one', '1', false), '1 two')

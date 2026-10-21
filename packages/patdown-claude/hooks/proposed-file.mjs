@@ -21,6 +21,17 @@ const patdownGlobExcludes = [
 	'**/credentials.json',
 	'**/secrets.yaml',
 	'**/secrets.yml',
+	'**/*.tfvars',
+	'**/*.tfvars.json',
+	'**/.npmrc',
+	'**/.pypirc',
+	'**/.pgpass',
+	'**/.my.cnf',
+	'**/*.p12',
+	'**/*.pfx',
+	'**/.git-credentials',
+	'**/*.keystore',
+	'**/*.jks',
 ]
 
 /** Internal deadline for the Claude PreToolUse judge, under the hook's 120s timeout. */

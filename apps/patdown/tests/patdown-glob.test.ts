@@ -15,6 +15,31 @@ describe('patdown path excludes', () => {
 		expect(patdownPathIsExcluded('src/cli.ts')).toBe(false)
 	})
 
+	it.each([
+		'prod.tfvars',
+		'prod.tfvars.json',
+		'.npmrc',
+		'.pypirc',
+		'.pgpass',
+		'.my.cnf',
+		'client.p12',
+		'client.pfx',
+		'.git-credentials',
+		'release.keystore',
+		'release.jks',
+	])('skips credential file %s at the root and under nested paths', (filename) => {
+		expect(patdownPathIsExcluded(filename)).toBe(true)
+		expect(patdownPathIsExcluded(`apps/api/${filename}`)).toBe(true)
+	})
+
+	it.each(['main.tf', 'prod.tfvars.example', 'registry.npmrc', 'signing.key'])(
+		'keeps file %s outside the credential skip list',
+		(filename) => {
+			expect(patdownPathIsExcluded(filename)).toBe(false)
+			expect(patdownPathIsExcluded(`apps/api/${filename}`)).toBe(false)
+		},
+	)
+
 	it('skips common credential filenames, including under nested paths', () => {
 		expect(patdownPathIsExcluded('.env')).toBe(true)
 		expect(patdownPathIsExcluded('.env.local')).toBe(true)
