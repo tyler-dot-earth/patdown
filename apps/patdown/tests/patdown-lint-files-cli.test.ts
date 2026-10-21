@@ -117,7 +117,7 @@ describe('lint file flags', () => {
 })
 
 describe('empty rule globs', () => {
-	it.effect('lint files only and skip credential paths', () =>
+	it.effect('lints files only and skips credential paths for every selection mode', () =>
 		Effect.gen(function* () {
 			const root = projectDirectory()
 
@@ -132,33 +132,71 @@ describe('empty rule globs', () => {
 			writeFileSync(join(root, 'dist/bundle.js'), 'export {}\n')
 			writeFileSync(join(root, '.env'), 'SECRET=1\n')
 			writeFileSync(join(root, 'id_rsa'), 'private-key\n')
+
+			const credentialPaths = [
+				'prod.tfvars',
+				'prod.tfvars.json',
+				'.npmrc',
+				'.pypirc',
+				'.pgpass',
+				'.my.cnf',
+				'client.p12',
+				'client.pfx',
+				'.git-credentials',
+				'release.keystore',
+				'release.jks',
+			].flatMap((filename) => [filename, `src/${filename}`])
+
+			for (const relativePath of credentialPaths) {
+				writeFileSync(join(root, relativePath), `CANARY-CREDENTIAL:${relativePath}\n`)
+			}
+
+			const selectionPaths = [
+				'AGENTS.PATDOWN.md',
+				'README.md',
+				'src/service.ts',
+				'dist/bundle.js',
+				'.env',
+				'id_rsa',
+				...credentialPaths,
+			]
+
+			writeFileSync(join(root, 'changed.txt'), selectionPaths.join('\n'))
 			process.chdir(root)
 
-			const asked: string[] = []
+			for (const args of [
+				[],
+				['--files', '**/*'],
+				['--files', '.'],
+				selectionPaths.flatMap((path) => ['--files', path]),
+				['--files-from', 'changed.txt'],
+			]) {
+				const asked: string[] = []
 
-			const judge = Layer.succeed(PatdownJudge, {
-				ask: (question, text) =>
-					Effect.sync(() => {
-						asked.push(`${question}\n${text}`)
+				const judge = Layer.succeed(PatdownJudge, {
+					ask: (question, text) =>
+						Effect.sync(() => {
+							asked.push(`${question}\n${text}`)
 
-						return { yesProbability: 0.1 }
-					}),
-			})
+							return { yesProbability: 0.1 }
+						}),
+				})
 
-			yield* runPatdownCli(MarkdownPatdownRuleSourceLive, [], judge)
+				yield* runPatdownCli(MarkdownPatdownRuleSourceLive, args, judge)
 
-			const askedText = asked.join('\n')
-			const lines = yield* TestConsole.logLines
+				const askedText = asked.join('\n')
+				const lines = yield* TestConsole.logLines
 
-			expect(asked.length).toBeGreaterThan(0)
-			expect(askedText).toContain('path: README.md')
-			expect(askedText).toContain('path: src/service.ts')
-			expect(askedText).toContain('path: AGENTS.PATDOWN.md')
-			expect(askedText).not.toContain('path: src\n')
-			expect(askedText).not.toContain('path: dist')
-			expect(askedText).not.toContain('SECRET=1')
-			expect(askedText).not.toContain('private-key')
-			expect(lines.join('\n')).toContain('patdown: passed')
+				expect(askedText).toContain('path: README.md')
+				expect(askedText).toContain('path: src/service.ts')
+				expect(askedText).toContain('path: AGENTS.PATDOWN.md')
+				expect(askedText).not.toContain('path: src\n')
+				expect(askedText).not.toContain('path: dist')
+				expect(askedText).not.toContain('SECRET=1')
+				expect(askedText).not.toContain('private-key')
+				expect(askedText).not.toContain('CANARY-CREDENTIAL:')
+				expect(lines.join('\n')).toContain('patdown: passed')
+			}
 		}).pipe(Effect.provide(outputHarness)),
 	)
 })

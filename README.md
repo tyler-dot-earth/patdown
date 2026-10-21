@@ -180,7 +180,7 @@ github-annotation: error
 Markdown headings must use sentence case, not title case.
 ```
 
-No globs means `**/*`. Globs are relative to cwd, not to the rules file. Always skipped: `.git`, `.turbo`, `coverage`, `dist`, `node_modules`, plus common credential filenames (`.env` / `.env.*`, `*.pem`, `id_rsa` / `id_rsa.*`, `credentials.json`, `secrets.yaml` / `secrets.yml`). Directory matches from empty globs are dropped before reading; only files go to the judge.
+No globs means `**/*`. Globs are relative to cwd, not to the rules file. Always skipped: `.git`, `.turbo`, `coverage`, `dist`, `node_modules`, plus common credential filenames (`.env` / `.env.*`, `*.pem`, `id_rsa` / `id_rsa.*`, `credentials.json`, `secrets.yaml` / `secrets.yml`, `*.tfvars` / `*.tfvars.json`, `.npmrc`, `.pypirc`, `.pgpass`, `.my.cnf`, `*.p12` / `*.pfx`, `.git-credentials`, `*.keystore` / `*.jks`). Directory matches from empty globs are dropped before reading; only files go to the judge.
 
 ## Lint
 
